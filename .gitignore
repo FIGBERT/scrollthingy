@@ -1,0 +1,5 @@
+*.beam
+*.ez
+client/build/
+client/priv/
+erl_crash.dump
