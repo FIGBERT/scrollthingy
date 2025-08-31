@@ -10,7 +10,6 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/fcjr/scroll-together/server/internal/server"
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
 )
@@ -61,11 +60,11 @@ func run(ctx context.Context, args []string, getenv func(string) string, stdin i
 		},
 	}))
 
-	var options = []func(*server.Server) error{
-		server.WithLogger(logger),
+	var options = []func(*Server) error{
+		WithLogger(logger),
 	}
 
-	s, err := server.New(server.NewParams{
+	s, err := New(NewParams{
 		Logger: logger,
 	},
 		options...)

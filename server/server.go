@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"context"
@@ -6,8 +6,6 @@ import (
 	"net"
 	"net/http"
 	"time"
-
-	"github.com/fcjr/scroll-together/server/internal/middleware"
 )
 
 const defaultReadTimeout = 5 * time.Second
@@ -40,9 +38,9 @@ func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 	mux.HandleFunc("GET /api/v1/room-token", s.handleRoomToken)
 
 	// apply middlewares
-	handler := middleware.Chain(mux,
-		middleware.WithPanicRecovery(s.logger),
-		middleware.WithRequestResponseLogging(s.logger),
+	handler := Chain(mux,
+		WithPanicRecovery(s.logger),
+		WithRequestResponseLogging(s.logger),
 	)
 
 	httpServer := &http.Server{
