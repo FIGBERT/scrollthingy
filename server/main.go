@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/lmittmann/tint"
+
+	"github.com/figbert/scroll-server/internal/server"
 )
 
 func main() {
@@ -19,7 +21,7 @@ func main() {
 		TimeFormat: time.DateTime,
 	}))
 
-	s, err := NewServer(WithLogger(logger))
+	s, err := server.New(server.WithLogger(logger))
 	if err != nil {
 		logger.Error("could not create server", "error", err)
 	}

@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -6,13 +6,15 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/figbert/scroll-server/internal/middleware"
 )
 
 type Server struct {
 	logger *slog.Logger
 }
 
-func NewServer(opts ...func(*Server) error) (*Server, error) {
+func New(opts ...func(*Server) error) (*Server, error) {
 	s := &Server{}
 	for _, opt := range opts {
 		if err := opt(s); err != nil {
@@ -26,9 +28,9 @@ func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 	mux := http.NewServeMux()
 
 	// apply middlewares
-	handler := ChainMiddleware(mux,
-		WithPanicRecovery(s.logger),
-		WithRequestResponseLogging(s.logger),
+	handler := middleware.Chain(mux,
+		middleware.WithPanicRecovery(s.logger),
+		middleware.WithRequestResponseLogging(s.logger),
 	)
 	httpServer := &http.Server{
 		Addr:         addr,
