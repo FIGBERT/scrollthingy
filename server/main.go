@@ -20,6 +20,7 @@ func main() {
 		AddSource:  true,
 		TimeFormat: time.DateTime,
 	}))
+	run(logger)
 
 	s, err := server.New(server.WithLogger(logger))
 	if err != nil {
