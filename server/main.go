@@ -30,7 +30,7 @@ func main() {
 	defer rig.Reader.Close()
 	defer rig.Track.Close()
 
-	s, err := server.New(server.WithLogger(logger))
+	s, err := server.New(rig, logger)
 	if err != nil {
 		logger.Error("could not create server", "error", err)
 		os.Exit(1)

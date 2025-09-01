@@ -7,19 +7,19 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/figbert/scroll-server/internal/camera"
 	"github.com/figbert/scroll-server/internal/middleware"
 )
 
 type Server struct {
+	rig    *camera.Rig
 	logger *slog.Logger
 }
 
-func New(opts ...func(*Server) error) (*Server, error) {
-	s := &Server{}
-	for _, opt := range opts {
-		if err := opt(s); err != nil {
-			return nil, err
-		}
+func New(rig *camera.Rig, logger *slog.Logger) (*Server, error) {
+	s := &Server{
+		rig:    rig,
+		logger: logger,
 	}
 	return s, nil
 }
@@ -59,18 +59,5 @@ func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 	case err := <-errCh:
 		s.logger.Error("server listen error, shuting down", "err", err)
 		return err
-	}
-}
-
-func (s *Server) redirectTo(path string) http.HandlerFunc {
-	return func(res http.ResponseWriter, req *http.Request) {
-		http.Redirect(res, req, path, http.StatusTemporaryRedirect)
-	}
-}
-
-func WithLogger(logger *slog.Logger) func(*Server) error {
-	return func(s *Server) error {
-		s.logger = logger
-		return nil
 	}
 }
