@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	lksdk "github.com/livekit/server-sdk-go/v2"
+
 	"github.com/figbert/scroll-server/internal/camera"
 	"github.com/figbert/scroll-server/internal/middleware"
 )
@@ -14,12 +16,19 @@ import (
 type Server struct {
 	rig    *camera.Rig
 	logger *slog.Logger
+	room   *lksdk.Room
 }
 
 func New(rig *camera.Rig, logger *slog.Logger) (*Server, error) {
+	room, err := join_room()
+	if err != nil {
+		logger.Error("unable to connect to livekit", "room", ROOM_NAME, "err", err)
+	}
+
 	s := &Server{
 		rig:    rig,
 		logger: logger,
+		room:   room,
 	}
 	return s, nil
 }
@@ -27,7 +36,9 @@ func New(rig *camera.Rig, logger *slog.Logger) (*Server, error) {
 func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /token", token(s))
+	mux.HandleFunc("GET /token", s.token())
+	s.publish_camera()
+	defer s.room.Disconnect()
 
 	// apply middlewares
 	handler := middleware.Chain(mux,
