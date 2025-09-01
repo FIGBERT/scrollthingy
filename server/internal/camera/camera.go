@@ -1,7 +1,8 @@
-package main
+package camera
 
 import (
-	"log/slog"
+	"fmt"
+	"io"
 
 	"github.com/pion/mediadevices"
 	"github.com/pion/mediadevices/pkg/codec/x264"
@@ -10,10 +11,15 @@ import (
 	"github.com/pion/webrtc/v4"
 )
 
-func run(logger *slog.Logger) {
+type Rig struct {
+	Track  *mediadevices.VideoTrack
+	Reader io.ReadCloser
+}
+
+func Setup() (*Rig, error) {
 	params, err := x264.NewParams()
 	if err != nil {
-		logger.Error("failure to generate new codec params", "format", "x264", "err", err)
+		return nil, fmt.Errorf("failed to generate new x264 codec params: %s", err)
 	}
 	params.BitRate = 2_000_000
 
@@ -25,22 +31,19 @@ func run(logger *slog.Logger) {
 		Codec: mediadevices.NewCodecSelector(mediadevices.WithVideoEncoders(&params)),
 	})
 	if err != nil {
-		logger.Error("unable to get user media", "err", err)
-		return
+		return nil, fmt.Errorf("unable to get user media: %s", err)
 	}
 
 	tracks := stream.GetVideoTracks()
 	if len(tracks) < 1 {
-		logger.Error("no video tracks found")
-		return
+		return nil, fmt.Errorf("no video tracks found")
 	}
-	logger.Info("got video tracks", "tracks", tracks, "count", len(tracks))
 
 	track := tracks[0].(*mediadevices.VideoTrack)
-	defer track.Close()
-
-	_, err = track.NewEncodedIOReader(webrtc.MimeTypeH264)
+	reader, err := track.NewEncodedIOReader(webrtc.MimeTypeH264)
 	if err != nil {
-		logger.Error("unable to convert track to reader", "err", err, "track", track.ID())
+		return nil, fmt.Errorf("unable to convert track to reader: %s", err)
 	}
+
+	return &Rig{Track: track, Reader: reader}, nil
 }

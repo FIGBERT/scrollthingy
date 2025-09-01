@@ -9,6 +9,7 @@ import (
 
 	"github.com/lmittmann/tint"
 
+	"github.com/figbert/scroll-server/internal/camera"
 	"github.com/figbert/scroll-server/internal/server"
 )
 
@@ -20,14 +21,23 @@ func main() {
 		AddSource:  true,
 		TimeFormat: time.DateTime,
 	}))
-	run(logger)
+
+	rig, err := camera.Setup()
+	if err != nil {
+		logger.Error("could not creat camera rig", "error", err)
+		os.Exit(1)
+	}
+	defer rig.Reader.Close()
+	defer rig.Track.Close()
 
 	s, err := server.New(server.WithLogger(logger))
 	if err != nil {
 		logger.Error("could not create server", "error", err)
+		os.Exit(1)
 	}
 
-	if err = s.ListenAndServe(ctx, ":8080"); err != nil {
+	err = s.ListenAndServe(ctx, ":8080")
+	if err != nil {
 		os.Exit(1)
 	}
 }
