@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
 
 	"github.com/figbert/scroll-server/internal/camera"
@@ -21,6 +22,11 @@ func main() {
 		AddSource:  true,
 		TimeFormat: time.DateTime,
 	}))
+
+	err := godotenv.Load()
+	if err != nil {
+		logger.Error("could not load .env (api keys will be empty)")
+	}
 
 	rig, err := camera.Setup()
 	if err != nil {

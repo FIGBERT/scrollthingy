@@ -27,6 +27,8 @@ func New(rig *camera.Rig, logger *slog.Logger) (*Server, error) {
 func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("GET /token", token(s))
+
 	// apply middlewares
 	handler := middleware.Chain(mux,
 		middleware.WithPanicRecovery(s.logger),
