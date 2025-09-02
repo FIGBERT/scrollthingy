@@ -1,4 +1,4 @@
-module github.com/figbert/scroll-server
+module github.com/fcjr/scroll-together/server
 
 go 1.24.5
 

@@ -9,8 +9,8 @@ import (
 
 	lksdk "github.com/livekit/server-sdk-go/v2"
 
-	"github.com/figbert/scroll-server/internal/camera"
-	"github.com/figbert/scroll-server/internal/middleware"
+	"github.com/fcjr/scroll-together/server/internal/camera"
+	"github.com/fcjr/scroll-together/server/internal/middleware"
 )
 
 type Server struct {

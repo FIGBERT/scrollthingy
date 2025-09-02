@@ -10,8 +10,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
 
-	"github.com/figbert/scroll-server/internal/camera"
-	"github.com/figbert/scroll-server/internal/server"
+	"github.com/fcjr/scroll-together/server/internal/camera"
+	"github.com/fcjr/scroll-together/server/internal/server"
 )
 
 func main() {
