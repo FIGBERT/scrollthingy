@@ -2,7 +2,6 @@ package camera
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/pion/mediadevices"
 	"github.com/pion/mediadevices/pkg/codec/x264"
@@ -13,7 +12,7 @@ import (
 
 type Rig struct {
 	Track  *mediadevices.VideoTrack
-	Reader io.ReadCloser
+	Reader mediadevices.RTPReadCloser
 }
 
 func Setup() (*Rig, error) {
@@ -40,7 +39,7 @@ func Setup() (*Rig, error) {
 	}
 
 	track := tracks[0].(*mediadevices.VideoTrack)
-	reader, err := track.NewEncodedIOReader(webrtc.MimeTypeH264)
+	reader, err := track.NewRTPReader(webrtc.MimeTypeH264, 12345, 1200)
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert track to reader: %s", err)
 	}

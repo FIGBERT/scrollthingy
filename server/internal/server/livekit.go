@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -49,14 +50,47 @@ func (s *Server) publish_camera() {
 		return
 	}
 
-	track, err := lksdk.NewLocalReaderTrack(s.rig.Reader, webrtc.MimeTypeH264)
+	codec := webrtc.RTPCodecCapability{
+		MimeType:  webrtc.MimeTypeH264,
+		ClockRate: 90000,
+	}
+
+	track, err := lksdk.NewLocalTrack(codec)
 	if err != nil {
-		s.logger.Error("failed to create livekit track from camera rig reader", "err", err)
+		s.logger.Error("failed to create livekit track", "err", err)
 		return
 	}
 
 	_, err = s.room.LocalParticipant.PublishTrack(track, &lksdk.TrackPublicationOptions{})
 	if err != nil {
 		s.logger.Error("publishing camera feed did not work as expected", "err", err)
+		return
+	}
+
+	go s.writeRTPPackets(track)
+}
+
+func (s *Server) writeRTPPackets(track *lksdk.LocalTrack) {
+	ctx := context.Background()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			packets, release, err := s.rig.Reader.Read()
+			if err != nil {
+				s.logger.Error("failed to read RTP packets", "err", err)
+				return
+			}
+
+			for _, packet := range packets {
+				if err := track.WriteRTP(packet, nil); err != nil {
+					s.logger.Error("failed to write RTP packet", "err", err)
+					release()
+					return
+				}
+			}
+			release()
+		}
 	}
 }
