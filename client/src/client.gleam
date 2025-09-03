@@ -27,6 +27,13 @@ fn delta_from_event(evt: Event(a)) -> Int
 @external(javascript, "./livekit.mjs", "connect_to_room")
 fn connect_to_room(url: String, token: String) -> Nil
 
+fn unchecked_err_to_noop(val: Result(a, b), callback: fn(a) -> Msg) -> Msg {
+  case val {
+    Ok(unwrapped) -> callback(unwrapped)
+    Error(_) -> Noop
+  }
+}
+
 fn listen_for_scroll() -> Effect(Msg) {
   effect.from(fn(dispatch) {
     window.add_event_listener("wheel", fn(evt) {
@@ -43,18 +50,10 @@ fn get_token() -> Effect(Msg) {
 fn process_token_response(
   resp: Result(response.Response(String), rsvp.Error),
 ) -> Msg {
-  case resp {
-    Ok(resp) -> {
-      let body = string.split_once(resp.body, on: "\n")
-      case body {
-        Ok(tuple) -> {
-          ConnectTo(url: tuple.0, token: tuple.1)
-        }
-        Error(_) -> Noop
-      }
-    }
-    Error(_) -> Noop
-  }
+  use resp <- unchecked_err_to_noop(resp)
+  let split = string.split_once(resp.body, on: "\n")
+  use tuple <- unchecked_err_to_noop(split)
+  ConnectTo(url: tuple.0, token: tuple.1)
 }
 
 fn connect_effect(url: String, token: String) -> Effect(Msg) {
