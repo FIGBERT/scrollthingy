@@ -1,5 +1,6 @@
 import gleam/http/response
 import gleam/int
+import gleam/string
 import lustre
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -15,7 +16,7 @@ type Model =
 
 type Msg {
   Wheel(delta: Int)
-  Token(str: String)
+  ConnectTo(url: String, token: String)
 
   Noop
 }
@@ -24,7 +25,7 @@ type Msg {
 fn delta_from_event(evt: Event(a)) -> Int
 
 @external(javascript, "./livekit.mjs", "connect_to_room")
-fn connect_to_room(token: String) -> Nil
+fn connect_to_room(url: String, token: String) -> Nil
 
 fn listen_for_scroll() -> Effect(Msg) {
   effect.from(fn(dispatch) {
@@ -43,14 +44,22 @@ fn process_token_response(
   resp: Result(response.Response(String), rsvp.Error),
 ) -> Msg {
   case resp {
-    Ok(resp) -> Token(resp.body)
+    Ok(resp) -> {
+      let body = string.split_once(resp.body, on: "\n")
+      case body {
+        Ok(tuple) -> {
+          ConnectTo(url: tuple.0, token: tuple.1)
+        }
+        Error(_) -> Noop
+      }
+    }
     Error(_) -> Noop
   }
 }
 
-fn connect_effect(token: String) -> Effect(Msg) {
+fn connect_effect(url: String, token: String) -> Effect(Msg) {
   effect.from(fn(dispatch) {
-    connect_to_room(token)
+    connect_to_room(url, token)
     dispatch(Noop)
   })
 }
@@ -69,7 +78,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
       #(model, effect.none())
     }
-    Token(value) -> #(model, connect_effect(value))
+    ConnectTo(url, token) -> #(model, connect_effect(url, token))
     Noop -> #(model, effect.none())
   }
 }

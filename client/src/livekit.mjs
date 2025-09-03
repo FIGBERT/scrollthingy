@@ -1,6 +1,6 @@
 import { Room, RoomEvent, Track } from "livekit-client";
 
-export async function connect_to_room(token) {
+export async function connect_to_room(url, token) {
   const room = new Room();
   room
     .on(RoomEvent.TrackSubscribed, handleTrackSubscribed)
@@ -8,7 +8,7 @@ export async function connect_to_room(token) {
     .on(RoomEvent.Disconnected, handleDisconnect)
     .on(RoomEvent.LocalTrackUnpublished, handleLocalTrackUnpublished);
 
-  await room.connect("wss://scroll-6p5bb18a.livekit.cloud", token);
+  await room.connect(url, token);
 }
 
 function handleTrackSubscribed(track, _publication, _participant) {

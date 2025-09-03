@@ -26,8 +26,16 @@ func (s *Server) token() func(http.ResponseWriter, *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
+		url := os.Getenv("LIVEKIT_URL")
+		if url == "" {
+			s.logger.Error("LIVEKIT_URL is blank or undefined", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:1234")
-		w.Write([]byte(token))
+		w.Write([]byte(url + "\n" + token))
 	}
 }
 
