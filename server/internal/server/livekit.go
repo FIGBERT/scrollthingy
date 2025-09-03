@@ -32,6 +32,7 @@ func (s *Server) token() func(http.ResponseWriter, *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:1234")
 		w.Write([]byte(token))
 	}
 }
