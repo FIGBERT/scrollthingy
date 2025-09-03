@@ -6,7 +6,6 @@ export async function connect_to_room(url, token) {
     .on(RoomEvent.TrackSubscribed, handleTrackSubscribed)
     .on(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed)
     .on(RoomEvent.Disconnected, handleDisconnect)
-    .on(RoomEvent.LocalTrackUnpublished, handleLocalTrackUnpublished);
 
   await room.connect(url, token);
 }
@@ -23,11 +22,6 @@ function handleTrackSubscribed(track, _publication, _participant) {
 function handleTrackUnsubscribed(track, _publication, _participant) {
   // remove tracks from all attached elements
   track.detach();
-}
-
-function handleLocalTrackUnpublished(publication, _participant) {
-  // when local tracks are ended, update UI to remove them from rendering
-  publication.track.detach();
 }
 
 function handleDisconnect() {
