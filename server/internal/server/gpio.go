@@ -1,6 +1,7 @@
 package server
 
 import (
+	"math"
 	"strconv"
 	"time"
 
@@ -41,9 +42,21 @@ func (s *Server) CleanupGPIO() {
 }
 
 func (s *Server) handleScroll(reader *lksdk.TextStreamReader, participant string) {
-	updated, err := strconv.Atoi(reader.ReadAll())
+	delta, err := strconv.Atoi(reader.ReadAll())
 	if err != nil || participant != s.state.current {
 		return
 	}
-	s.state.offset = updated
+
+	if delta < 0 {
+		s.ports.direction.SetValue(1)
+		delta *= -1
+	} else {
+		s.ports.direction.SetValue(0)
+	}
+
+	for _ = range delta {
+		s.ports.step.SetValue(1)
+		<-time.After(GPIO_DELAY)
+		s.ports.step.SetValue(0)
+	}
 }

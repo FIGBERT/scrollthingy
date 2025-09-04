@@ -69,13 +69,8 @@ fn init(_args: Nil) -> #(Model, Effect(Msg)) {
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     Wheel(delta) -> {
-      let model = case delta {
-        less if less < 0 -> model - 1
-        more if more > 0 -> model + 1
-        _ -> model
-      }
-      send_scroll(model)
-      #(model, effect.none())
+      send_scroll(delta)
+      #(model + delta, effect.none())
     }
     ConnectTo(url, token) -> #(model, connect_effect(url, token))
     Noop -> #(model, effect.none())

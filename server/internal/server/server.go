@@ -14,7 +14,6 @@ import (
 )
 
 type state struct {
-	offset  int
 	current string
 	users   []string
 }
