@@ -41,6 +41,7 @@ func main() {
 		logger.Error("could not create server", "error", err)
 		os.Exit(1)
 	}
+	defer s.CleanupGPIO()
 
 	err = s.ListenAndServe(ctx, ":8080")
 	if err != nil {

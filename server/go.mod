@@ -10,6 +10,7 @@ require (
 	github.com/lmittmann/tint v1.1.2
 	github.com/pion/mediadevices v0.7.1
 	github.com/pion/webrtc/v4 v4.1.5-0.20250828044558-c376d0edf977
+	github.com/warthog618/go-gpiocdev v0.9.1
 )
 
 require (

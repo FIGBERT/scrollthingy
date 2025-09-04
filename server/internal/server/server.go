@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"strconv"
 	"time"
 
 	lksdk "github.com/livekit/server-sdk-go/v2"
@@ -26,6 +25,7 @@ type Server struct {
 	room   *lksdk.Room
 
 	state *state
+	ports *ports
 }
 
 func New(rig *camera.Rig, logger *slog.Logger) (*Server, error) {
@@ -39,6 +39,11 @@ func New(rig *camera.Rig, logger *slog.Logger) (*Server, error) {
 		logger.Error("unable to connect to livekit", "room", ROOM_NAME, "err", err)
 		return nil, err
 	}
+	err, port := s.setupGPIO()
+	if err != nil {
+		logger.Error("unable to bind to gpio port(s)", "id", *port, "err", err)
+		return nil, err
+	}
 
 	return s, nil
 }
@@ -48,13 +53,7 @@ func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 
 	mux.HandleFunc("GET /token", s.token())
 	s.publish_camera()
-	s.room.RegisterTextStreamHandler("scroll-updates", func(reader *lksdk.TextStreamReader, participant string) {
-		updated, err := strconv.Atoi(reader.ReadAll())
-		if err != nil || participant != s.state.current {
-			return
-		}
-		s.state.offset = updated
-	})
+	s.room.RegisterTextStreamHandler("scroll-updates", s.handleScroll)
 	defer s.room.Disconnect()
 
 	// apply middlewares
