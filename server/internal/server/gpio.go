@@ -47,10 +47,10 @@ func (s *Server) handleScroll(reader *lksdk.TextStreamReader, participant string
 	}
 
 	if delta < 0 {
-		s.ports.direction.SetValue(1)
+		s.ports.direction.SetValue(0)
 		delta *= -1
 	} else {
-		s.ports.direction.SetValue(0)
+		s.ports.direction.SetValue(1)
 	}
 
 	for _ = range delta {
