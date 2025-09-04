@@ -13,12 +13,6 @@ either need to bring it into the fold, or move away from that stack. I
 like the stack so will probably do the former.
 
 ## Features To Be Developed
-Participants need to be managed more closely. Right now they are
-semi-ephemeral: token are issued with random IDs, but those are not
-stored anywhere and live only in LiveKit. They should instead be listed
-in an ordered queue. Though I suppose server-side, we only need to store
-the scroll offset of the active user.
-
 Frank and I have been planning on putting users into a line to scroll
 from the outset of the project, but David had the great idea just now to
 allow them to scroll through the list of folks waiting. Scroll-ception.

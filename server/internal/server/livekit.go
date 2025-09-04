@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"slices"
 
 	"github.com/google/uuid"
 	"github.com/pion/webrtc/v4"
@@ -39,8 +40,8 @@ func (s *Server) token() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func join_room() (*lksdk.Room, error) {
-	return lksdk.ConnectToRoom(
+func (s *Server) join_room() error {
+	room, err := lksdk.ConnectToRoom(
 		os.Getenv("LIVEKIT_URL"),
 		lksdk.ConnectInfo{
 			APIKey:              os.Getenv("LIVEKIT_API_KEY"),
@@ -48,8 +49,47 @@ func join_room() (*lksdk.Room, error) {
 			RoomName:            ROOM_NAME,
 			ParticipantIdentity: "server",
 		},
-		&lksdk.RoomCallback{},
+		&lksdk.RoomCallback{
+			OnParticipantConnected:    s.participantJoined,
+			OnParticipantDisconnected: s.participantLeft,
+		},
 	)
+	if err != nil {
+		return err
+	}
+
+	s.room = room
+	return nil
+}
+
+func (s *Server) participantJoined(user *lksdk.RemoteParticipant) {
+	id := user.Identity()
+	s.state.users = append(s.state.users, id)
+	if s.state.current == "" {
+		s.state.current = id
+	}
+}
+
+func (s *Server) participantLeft(user *lksdk.RemoteParticipant) {
+	id := user.Identity()
+	if s.state.current == id {
+		s.state.users = s.state.users[1:]
+		if len(s.state.users) > 0 {
+			s.state.current = s.state.users[0]
+		} else {
+			s.state.current = ""
+		}
+	} else {
+		s.state.users = slices.Collect(func(yield func(string) bool) {
+			for _, u := range s.state.users {
+				if u != id {
+					if !yield(u) {
+						return
+					}
+				}
+			}
+		})
+	}
 }
 
 func (s *Server) publish_camera() {

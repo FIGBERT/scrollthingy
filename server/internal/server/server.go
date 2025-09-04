@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	lksdk "github.com/livekit/server-sdk-go/v2"
@@ -13,23 +14,32 @@ import (
 	"github.com/fcjr/scroll-together/server/internal/middleware"
 )
 
+type state struct {
+	offset  int
+	current string
+	users   []string
+}
+
 type Server struct {
 	rig    *camera.Rig
 	logger *slog.Logger
 	room   *lksdk.Room
+
+	state *state
 }
 
 func New(rig *camera.Rig, logger *slog.Logger) (*Server, error) {
-	room, err := join_room()
-	if err != nil {
-		logger.Error("unable to connect to livekit", "room", ROOM_NAME, "err", err)
-	}
-
 	s := &Server{
 		rig:    rig,
 		logger: logger,
-		room:   room,
+		state:  &state{users: make([]string, 0)},
 	}
+	err := s.join_room()
+	if err != nil {
+		logger.Error("unable to connect to livekit", "room", ROOM_NAME, "err", err)
+		return nil, err
+	}
+
 	return s, nil
 }
 
@@ -39,7 +49,11 @@ func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 	mux.HandleFunc("GET /token", s.token())
 	s.publish_camera()
 	s.room.RegisterTextStreamHandler("scroll-updates", func(reader *lksdk.TextStreamReader, participant string) {
-		s.logger.Info("receiver msg", "text", reader.ReadAll(), "participant", participant, "topic", "scroll-updates")
+		updated, err := strconv.Atoi(reader.ReadAll())
+		if err != nil || participant != s.state.current {
+			return
+		}
+		s.state.offset = updated
 	})
 	defer s.room.Disconnect()
 
