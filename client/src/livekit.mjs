@@ -1,13 +1,17 @@
 import { Room, RoomEvent, Track } from "livekit-client";
 
+const room = new Room();
+
 export async function connect_to_room(url, token) {
-  const room = new Room();
   room
     .on(RoomEvent.TrackSubscribed, handleTrackSubscribed)
     .on(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed)
     .on(RoomEvent.Disconnected, handleDisconnect)
-
   await room.connect(url, token);
+}
+
+export async function send_scroll(delta) {
+  await room.localParticipant.sendText(delta, { topic: "scroll-updates" });
 }
 
 function handleTrackSubscribed(track, _publication, _participant) {

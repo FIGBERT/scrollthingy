@@ -28,6 +28,9 @@ fn delta_from_event(evt: Event(a)) -> Int
 @external(javascript, "./livekit.mjs", "connect_to_room")
 fn connect_to_room(url: String, token: String) -> Nil
 
+@external(javascript, "./livekit.mjs", "send_scroll")
+fn send_scroll(delta: Int) -> Nil
+
 fn listen_for_scroll() -> Effect(Msg) {
   effect.from(fn(dispatch) {
     window.add_event_listener("wheel", fn(evt) {
@@ -71,6 +74,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         more if more > 0 -> model + 1
         _ -> model
       }
+      send_scroll(model)
       #(model, effect.none())
     }
     ConnectTo(url, token) -> #(model, connect_effect(url, token))

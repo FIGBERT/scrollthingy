@@ -38,6 +38,9 @@ func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 
 	mux.HandleFunc("GET /token", s.token())
 	s.publish_camera()
+	s.room.RegisterTextStreamHandler("scroll-updates", func(reader *lksdk.TextStreamReader, participant string) {
+		s.logger.Info("receiver msg", "text", reader.ReadAll(), "participant", participant, "topic", "scroll-updates")
+	})
 	defer s.room.Disconnect()
 
 	// apply middlewares
