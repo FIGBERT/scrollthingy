@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -27,31 +28,47 @@ type Server struct {
 	ports *ports
 }
 
-func New(rig *camera.Rig, logger *slog.Logger) (*Server, error) {
-	s := &Server{
-		rig:    rig,
-		logger: logger,
-		state:  &state{users: make([]string, 0)},
+func New(logger *slog.Logger) (*Server, error) {
+	if logger == nil {
+		return nil, fmt.Errorf("a logger is required to initialize the server")
 	}
-	err := s.join_room()
+
+	s := &Server{logger: logger, state: &state{users: make([]string, 0)}}
+
+	err := s.setupCamera()
 	if err != nil {
-		logger.Error("unable to connect to livekit", "room", ROOM_NAME, "err", err)
+		logger.Error("unable to create camera rig")
 		return nil, err
 	}
+
+	err = s.joinRoom()
+	if err != nil {
+		logger.Error("unable to connect to livekit", "room", ROOM_NAME)
+		return nil, err
+	}
+
 	err, port := s.setupGPIO()
 	if err != nil {
-		logger.Error("unable to bind to gpio port(s)", "id", *port, "err", err)
+		logger.Error("unable to bind to gpio port(s)", "id", *port)
 		return nil, err
 	}
 
 	return s, nil
 }
 
+func (s *Server) Cleanup() {
+	if s.rig != nil {
+		s.rig.Reader.Close()
+		s.rig.Track.Close()
+	}
+	s.CleanupGPIO()
+}
+
 func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /token", s.token())
-	s.publish_camera()
+	s.publishCamera()
 	s.room.RegisterTextStreamHandler("scroll-updates", s.handleScroll)
 	defer s.room.Disconnect()
 

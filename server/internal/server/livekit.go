@@ -40,7 +40,7 @@ func (s *Server) token() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (s *Server) join_room() error {
+func (s *Server) joinRoom() error {
 	room, err := lksdk.ConnectToRoom(
 		os.Getenv("LIVEKIT_URL"),
 		lksdk.ConnectInfo{
@@ -92,9 +92,9 @@ func (s *Server) participantLeft(user *lksdk.RemoteParticipant) {
 	}
 }
 
-func (s *Server) publish_camera() {
+func (s *Server) publishCamera() {
 	if s.room == nil {
-		s.logger.Error("no room available to publish feed. did you call join_room()?", "server", s)
+		s.logger.Error("no room available to publish feed. did you call joinRoom()?", "server", s)
 		return
 	}
 

@@ -10,7 +10,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
 
-	"github.com/fcjr/scroll-together/server/internal/camera"
 	"github.com/fcjr/scroll-together/server/internal/server"
 )
 
@@ -25,23 +24,15 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		logger.Error("could not load .env (api keys will be empty)")
+		logger.Error("could not load .env (api keys likely empty)")
 	}
 
-	rig, err := camera.Setup()
+	s, err := server.New(logger)
 	if err != nil {
-		logger.Error("could not creat camera rig", "error", err)
+		logger.Error("could not create server", "err", err)
 		os.Exit(1)
 	}
-	defer rig.Reader.Close()
-	defer rig.Track.Close()
-
-	s, err := server.New(rig, logger)
-	if err != nil {
-		logger.Error("could not create server", "error", err)
-		os.Exit(1)
-	}
-	defer s.CleanupGPIO()
+	defer s.Cleanup()
 
 	err = s.ListenAndServe(ctx, ":8080")
 	if err != nil {
