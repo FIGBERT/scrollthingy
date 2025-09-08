@@ -10,7 +10,7 @@ import plinth/browser/event.{type Event}
 import plinth/browser/window
 import rsvp
 
-const server = "http://10.100.17.93:8080"
+const server = "http://localhost:8080"
 
 type Model =
   Int
