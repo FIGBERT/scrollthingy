@@ -1,8 +1,8 @@
 import gleam/http/response
-import gleam/int
 import gleam/result
 import gleam/string
 import lustre
+import lustre/attribute as attr
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
@@ -13,13 +13,12 @@ import rsvp
 const server = "http://localhost:8080"
 
 type Model =
-  Int
+  Element(Msg)
 
 type Msg {
   Wheel(delta: Int)
   ConnectTo(url: String, token: String)
-
-  Noop
+  Err
 }
 
 @external(javascript, "./scroll.mjs", "delta_from_event")
@@ -51,39 +50,41 @@ fn process_token_response(
   |> result.map_error(fn(_) { Nil })
   |> result.try(fn(resp) { string.split_once(resp.body, on: "\n") })
   |> result.map(fn(tuple) { ConnectTo(url: tuple.0, token: tuple.1) })
-  |> result.map_error(fn(_) { Noop })
+  |> result.map_error(fn(_) { Err })
   |> result.unwrap_both
 }
 
 fn connect_effect(url: String, token: String) -> Effect(Msg) {
-  effect.from(fn(dispatch) {
-    connect_to_room(url, token)
-    dispatch(Noop)
-  })
+  effect.from(fn(_dispatch) { connect_to_room(url, token) })
+}
+
+fn scroll_effect(delta: Int) -> Effect(Msg) {
+  effect.from(fn(_dispatch) { send_scroll(delta) })
 }
 
 fn init(_args: Nil) -> #(Model, Effect(Msg)) {
-  #(0, effect.batch([listen_for_scroll(), get_token()]))
+  #(
+    html.video([attr.id("livekit")], []),
+    effect.batch([listen_for_scroll(), get_token()]),
+  )
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    Wheel(delta) -> {
-      send_scroll(delta)
-      #(model + delta, effect.none())
-    }
+    Wheel(delta) -> #(model, scroll_effect(delta))
     ConnectTo(url, token) -> #(model, connect_effect(url, token))
-    Noop -> #(model, effect.none())
+
+    Err -> #(model, effect.none())
   }
 }
 
 fn view(model: Model) -> Element(Msg) {
-  html.p([], [html.text(int.to_string(model))])
+  html.p([], [model])
 }
 
 pub fn main() -> Nil {
   let assert Ok(_) =
     lustre.application(init, update, view)
-    |> lustre.start("#lustre", Nil)
+    |> lustre.start("body", Nil)
   Nil
 }

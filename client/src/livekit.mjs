@@ -7,6 +7,7 @@ export async function connect_to_room(url, token) {
     .on(RoomEvent.TrackSubscribed, handleTrackSubscribed)
     .on(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed)
     .on(RoomEvent.Disconnected, handleDisconnect)
+
   await room.connect(url, token);
 }
 
@@ -16,10 +17,8 @@ export async function send_scroll(delta) {
 
 function handleTrackSubscribed(track, _publication, _participant) {
   if (track.kind === Track.Kind.Video || track.kind === Track.Kind.Audio) {
-    // attach it to a new HTMLVideoElement or HTMLAudioElement
-    const element = track.attach();
-    const parent = document.getElementById("livekit");
-    parent.appendChild(element);
+    const video = document.getElementById("livekit");
+    track.attach(video);
   }
 }
 
