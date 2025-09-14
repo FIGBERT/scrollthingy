@@ -5,7 +5,6 @@ import lustre
 import lustre/attribute as attr
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
-import lustre/element/html
 import plinth/browser/event.{type Event}
 import plinth/browser/window
 import rsvp
@@ -13,11 +12,12 @@ import sketch.{type StyleSheet}
 import sketch/css
 import sketch/css/length
 import sketch/lustre as skls
+import sketch/lustre/element/html
 
 const server = "http://localhost:8080"
 
 type Model =
-  Element(Msg)
+  Nil
 
 type Msg {
   Wheel(delta: Int)
@@ -67,10 +67,7 @@ fn scroll_effect(delta: Int) -> Effect(Msg) {
 }
 
 fn init(_args: Nil) -> #(Model, Effect(Msg)) {
-  #(
-    html.video([attr.id("livekit")], []),
-    effect.batch([listen_for_scroll(), get_token()]),
-  )
+  #(Nil, effect.batch([listen_for_scroll(), get_token()]))
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -82,9 +79,16 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-fn view(model: Model, styles: StyleSheet) -> Element(Msg) {
+fn view(_model: Model, styles: StyleSheet) -> Element(Msg) {
   use <- skls.render(stylesheet: styles, in: [skls.node()])
-  html.p([], [model])
+
+  html.div_([], [
+    html.video(
+      css.class([css.width(length.percent(100))]),
+      [attr.id("livekit")],
+      [],
+    ),
+  ])
 }
 
 pub fn main() -> Nil {
