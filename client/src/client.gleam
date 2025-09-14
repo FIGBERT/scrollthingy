@@ -9,6 +9,10 @@ import lustre/element/html
 import plinth/browser/event.{type Event}
 import plinth/browser/window
 import rsvp
+import sketch.{type StyleSheet}
+import sketch/css
+import sketch/css/length
+import sketch/lustre as skls
 
 const server = "http://localhost:8080"
 
@@ -78,13 +82,26 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-fn view(model: Model) -> Element(Msg) {
+fn view(model: Model, styles: StyleSheet) -> Element(Msg) {
+  use <- skls.render(stylesheet: styles, in: [skls.node()])
   html.p([], [model])
 }
 
 pub fn main() -> Nil {
+  let assert Ok(styles) =
+    skls.construct(fn(styles) {
+      styles
+      |> sketch.global(
+        css.global("html, body", [
+          css.margin(length.px(0)),
+          css.height(length.percent(100)),
+          css.overflow("hidden"),
+        ]),
+      )
+    })
+
   let assert Ok(_) =
-    lustre.application(init, update, view)
+    lustre.application(init, update, view(_, styles))
     |> lustre.start("body", Nil)
   Nil
 }
