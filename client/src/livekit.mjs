@@ -2,13 +2,17 @@ import { Room, RoomEvent, Track } from "livekit-client";
 
 const room = new Room();
 
-export async function connect_to_room(url, token) {
+export async function connect_to_room(url, token, dispatch) {
   room
     .on(RoomEvent.TrackSubscribed, handleTrackSubscribed)
     .on(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed)
     .on(RoomEvent.Disconnected, handleDisconnect)
 
   await room.connect(url, token);
+
+  room.registerTextStreamHandler("line", async (reader, _participant) => {
+    dispatch(await reader.readAll());
+  })
 }
 
 export async function send_scroll(delta) {

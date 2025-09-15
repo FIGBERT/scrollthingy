@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 	"slices"
@@ -14,6 +15,11 @@ import (
 )
 
 const ROOM_NAME = "default"
+
+type roomUpdatePayload struct {
+	Index int `json:"index"`
+	Total int `json:"total"`
+}
 
 func (s *Server) token() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -68,28 +74,47 @@ func (s *Server) participantJoined(user *lksdk.RemoteParticipant) {
 	if s.state.current == "" {
 		s.state.current = id
 	}
+	s.broadcastRoomUpdates()
 }
 
 func (s *Server) participantLeft(user *lksdk.RemoteParticipant) {
 	id := user.Identity()
+	idx := slices.Index(s.state.users, id)
+	if idx < 0 {
+		s.logger.Error("user left that was not in list of users", "id", id)
+		return
+	}
+
+	s.state.users = append(s.state.users[:idx], s.state.users[idx+1:]...)
 	if s.state.current == id {
-		s.state.users = s.state.users[1:]
 		if len(s.state.users) > 0 {
 			s.state.current = s.state.users[0]
 		} else {
 			s.state.current = ""
 		}
-	} else {
-		s.state.users = slices.Collect(func(yield func(string) bool) {
-			for _, u := range s.state.users {
-				if u != id {
-					if !yield(u) {
-						return
-					}
-				}
-			}
-		})
 	}
+
+	s.broadcastRoomUpdates()
+}
+
+func (s *Server) broadcastRoomUpdates() {
+	size := len(s.state.users)
+	for pos, id := range s.state.users {
+		payload, err := json.Marshal(roomUpdatePayload{pos, size})
+		if err != nil {
+			s.logger.Error("unable to encode roomUpdatePayload", "idx", pos, "total", size)
+			continue
+		}
+
+		s.room.LocalParticipant.SendText(
+			string(payload),
+			lksdk.StreamTextOptions{
+				Topic:                 "line",
+				DestinationIdentities: []string{id},
+			},
+		)
+	}
+	s.logger.Info("broadcast room updates", "users", size)
 }
 
 func (s *Server) publishCamera() {
