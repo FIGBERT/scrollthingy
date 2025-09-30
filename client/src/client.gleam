@@ -29,7 +29,7 @@ type Msg {
   Wheel(delta: Int)
   ConnectTo(url: String, token: String)
   RoomUpdate(idx: Int, total: Int)
-  Err
+  Err(String)
 }
 
 @external(javascript, "./scroll.mjs", "delta_from_event")
@@ -65,7 +65,7 @@ fn process_token_response(
   |> result.map_error(fn(_) { Nil })
   |> result.try(fn(resp) { string.split_once(resp.body, on: "\n") })
   |> result.map(fn(tuple) { ConnectTo(url: tuple.0, token: tuple.1) })
-  |> result.map_error(fn(_) { Err })
+  |> result.map_error(fn(_) { Err("Unable to connect to the room.") })
   |> result.unwrap_both
 }
 
@@ -81,7 +81,7 @@ fn connect_effect(url: String, token: String) -> Effect(Msg) {
       let result = json.parse(update, payload_decoder)
       case result {
         Ok(msg) -> dispatch(msg)
-        Error(_) -> dispatch(Err)
+        Error(_) -> dispatch(Err("Unable to parse room update."))
       }
     }
 
@@ -109,7 +109,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
 
-    Err -> #(model, effect.none())
+    Err(_) -> #(model, effect.none())
   }
 }
 
