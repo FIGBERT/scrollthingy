@@ -19,3 +19,18 @@ allow them to scroll through the list of folks waiting. Scroll-ception.
 
 Having written this down I think I can see it coming together in my
 mind. I'll be back soon.
+
+## Ideas for Final Scroll (from Recurse demo)
+- Entire Bee Movie Script (+2)
+- The Odyssey
+- Write poetry
+- Put a pen on top so ppl can draw stuff
+- Kalaidescope
+- Jewish edition: torah scroll
+- MDN scroll docs
+- its own source (+1)
+- snapshot of all of Zulip
+- teletype interface
+- an unfolded river map
+- legal documents from the dave mathews band sewage dump incedent
+- fishing reel
