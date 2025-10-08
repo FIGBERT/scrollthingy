@@ -112,7 +112,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(Intro(None), effect.none())
       }
     }
-    Wheel(delta) -> #(model, scroll_effect(delta))
+    Wheel(delta) -> {
+      case model {
+        Intro(_) -> #(model, effect.none())
+        Game(_) -> #(model, scroll_effect(delta))
+      }
+    }
     ConnectTo(url, token) -> #(model, connect_effect(url, token))
 
     RoomUpdate(idx, total) -> {
