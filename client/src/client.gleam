@@ -2,12 +2,14 @@ import gleam/dynamic/decode
 import gleam/http/response
 import gleam/int
 import gleam/json
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import lustre
 import lustre/attribute as attr
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
+import lustre/event as evt
 import plinth/browser/event.{type Event}
 import plinth/browser/window
 import rsvp
@@ -20,12 +22,17 @@ import sketch/lustre/element/html
 const server = "http://localhost:8080"
 
 type Model {
-  Intro
+  Intro(Option(Status))
+  Game(Status)
+}
+
+type Status {
   Leader
   Line(position: Int, size: Int)
 }
 
 type Msg {
+  Join
   Wheel(delta: Int)
   ConnectTo(url: String, token: String)
   RoomUpdate(idx: Int, total: Int)
@@ -94,18 +101,28 @@ fn scroll_effect(delta: Int) -> Effect(Msg) {
 }
 
 fn init(_args: Nil) -> #(Model, Effect(Msg)) {
-  #(Intro, effect.batch([listen_for_scroll(), get_token()]))
+  #(Intro(None), effect.batch([listen_for_scroll(), get_token()]))
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
+    Join -> {
+      case model {
+        Intro(Some(status)) -> #(Game(status), effect.none())
+        _ -> #(Intro(None), effect.none())
+      }
+    }
     Wheel(delta) -> #(model, scroll_effect(delta))
     ConnectTo(url, token) -> #(model, connect_effect(url, token))
 
     RoomUpdate(idx, total) -> {
-      case idx {
-        0 -> #(Leader, effect.none())
-        _ -> #(Line(idx, total - 1), effect.none())
+      let status = case idx {
+        0 -> Leader
+        _ -> Line(idx, total - 1)
+      }
+      case model {
+        Game(_) -> #(Game(status), effect.none())
+        Intro(_) -> #(Intro(Some(status)), effect.none())
       }
     }
 
@@ -116,31 +133,86 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 fn view(model: Model, styles: StyleSheet) -> Element(Msg) {
   use <- skls.render(stylesheet: styles, in: [skls.node()])
 
-  html.div_([], [
-    html.video(
-      css.class([css.width(length.percent(100))]),
-      [attr.id("livekit")],
-      [],
-    ),
-    html.p(
-      css.class([
-        css.position("absolute"),
-        css.inset_inline_start("5ch"),
-        css.inset_block_start("3ch"),
-        css.color("red"),
-        css.font_weight("bold"),
-      ]),
-      [],
-      [
-        html.text(case model {
-          Intro -> "intro"
-          Leader -> "leader"
-          Line(pos, total) ->
-            int.to_string(pos) <> "/" <> int.to_string(total) <> " in-line"
-        }),
-      ],
-    ),
-  ])
+  let vid_class =
+    css.class([
+      css.width(length.percent(100)),
+      css.height(length.percent(100)),
+      css.position("absolute"),
+      css.object_fit("cover"),
+      ..case model {
+        Intro(_) -> [css.filter("grayscale(1) brightness(0.4)")]
+        Game(Line(_, _)) -> [css.filter("grayscale(1) brightness(0.4)")]
+        _ -> []
+      }
+    ])
+
+  let game_ui = case model {
+    Intro(_) -> {
+      html.div(
+        css.class([
+          css.position("absolute"),
+          css.display("grid"),
+          css.place_items("center"),
+          css.width(length.percent(100)),
+          css.height(length.percent(100)),
+          css.text_align("center"),
+        ]),
+        [],
+        [
+          html.span_([], [
+            html.h1(css.class([css.color("white")]), [], [
+              html.text("Overcomplicated Scroll Pun"),
+            ]),
+            html.button(
+              css.class([
+                css.font_size(length.percent(120)),
+                css.padding_inline(length.ch(4.0)),
+                css.padding_block(length.ch(0.5)),
+              ]),
+              [evt.on_click(Join)],
+              [html.text("LET'S GO")],
+            ),
+          ]),
+        ],
+      )
+    }
+    Game(status) ->
+      html.p(
+        css.class([
+          css.color("white"),
+          css.font_weight("bold"),
+          css.position("absolute"),
+          css.margin(length.px(0)),
+          css.text_align("end"),
+          css.width(length.percent(100)),
+        ]),
+        [],
+        [
+          case status {
+            Leader -> html.text("You are in control. Scroll!")
+            Line(pos, size) ->
+              html.text(
+                "#"
+                <> int.to_string(pos)
+                <> " in line ("
+                <> int.to_string(size)
+                <> " waiting)",
+              )
+          },
+        ],
+      )
+  }
+
+  html.div(
+    css.class([
+      css.position("relative"),
+      css.height(length.percent(100)),
+      css.border("1.5em solid black"),
+      css.box_sizing("border-box"),
+    ]),
+    [],
+    [html.video(vid_class, [attr.id("livekit")], []), game_ui],
+  )
 }
 
 pub fn main() -> Nil {
@@ -152,6 +224,8 @@ pub fn main() -> Nil {
           css.margin(length.px(0)),
           css.height(length.percent(100)),
           css.overflow("hidden"),
+          css.font_family("-apple-system, helvetica, arial, sans-serif"),
+          css.background_color("black"),
         ]),
       )
     })
