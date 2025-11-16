@@ -5,6 +5,7 @@ import gleam/json
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
+import gleam/uri
 import lustre
 import lustre/attribute as attr
 import lustre/effect.{type Effect}
@@ -18,8 +19,6 @@ import sketch/css
 import sketch/css/length
 import sketch/lustre as skls
 import sketch/lustre/element/html
-
-const server = "http://localhost:8080"
 
 type Model {
   Intro(Option(Status))
@@ -61,6 +60,16 @@ fn listen_for_scroll() -> Effect(Msg) {
 }
 
 fn get_token() -> Effect(Msg) {
+  let server =
+    uri.parse(window.origin())
+    |> result.try(fn(url) {
+      case url.host, url.port {
+        Some("localhost"), Some(1234) -> Ok("http://localhost:8080")
+        _, _ -> Error(Nil)
+      }
+    })
+    |> result.unwrap("")
+
   let url = server <> "/token"
   rsvp.get(url, rsvp.expect_ok_response(process_token_response))
 }

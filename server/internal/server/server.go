@@ -68,6 +68,9 @@ func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /token", s.token())
+	mux.HandleFunc("GET /", s.index())
+	mux.HandleFunc("GET /client.mjs", s.script())
+
 	s.publishCamera()
 	s.room.RegisterTextStreamHandler("scroll-updates", s.handleScroll)
 	defer s.room.Disconnect()
