@@ -11,6 +11,9 @@ build-prod: _build-client
     @cp client/priv/static/client.mjs server/internal/frontend/client.mjs
     @cd server && go build .
 
+compile:
+    @docker build --output=. .
+
 clean:
     rm -rf client/build client/priv client/node_modules
     rm -f server/server
