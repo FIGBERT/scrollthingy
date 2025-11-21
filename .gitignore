@@ -5,3 +5,4 @@ client/priv/
 client/node_modules/
 erl_crash.dump
 server/server
+prod
