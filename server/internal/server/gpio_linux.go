@@ -34,6 +34,7 @@ func (s *Server) setupGPIO() (error, *int) {
 	}
 
 	s.ports = &ports{direction, step, power}
+	s.killPowerToMotor()
 	return nil, nil
 }
 
