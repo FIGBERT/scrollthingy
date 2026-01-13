@@ -61,7 +61,7 @@ func (s *Server) Cleanup() {
 		s.rig.Reader.Close()
 		s.rig.Track.Close()
 	}
-	s.CleanupGPIO()
+	s.cleanupGPIO()
 }
 
 func (s *Server) ListenAndServe(ctx context.Context, addr string) error {

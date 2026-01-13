@@ -12,13 +12,13 @@ const GPIO_CHIP = "gpiochip0"
 const GPIO_DELAY = time.Millisecond
 
 type ports struct {
-	direction *gpio.Line
-	step      *gpio.Line
+	direction, step, power *gpio.Line
 }
 
 func (s *Server) setupGPIO() (error, *int) {
 	dir := 23
 	stp := 24
+	pwr := 25
 
 	direction, err := gpio.RequestLine(GPIO_CHIP, dir, gpio.AsOutput(0))
 	if err != nil {
@@ -28,8 +28,12 @@ func (s *Server) setupGPIO() (error, *int) {
 	if err != nil {
 		return err, &stp
 	}
+	power, err := gpio.RequestLine(GPIO_CHIP, pwr, gpio.AsOutput(0))
+	if err != nil {
+		return err, &stp
+	}
 
-	s.ports = &ports{direction, step}
+	s.ports = &ports{direction, step, power}
 	return nil, nil
 }
 
@@ -38,6 +42,8 @@ func (s *Server) CleanupGPIO() {
 	s.ports.direction.Close()
 	s.ports.step.Reconfigure(gpio.AsInput)
 	s.ports.step.Close()
+	s.ports.power.Reconfigure(gpio.AsInput)
+	s.ports.power.Close()
 }
 
 func (s *Server) handleScroll(reader *lksdk.TextStreamReader, participant string) {
@@ -58,4 +64,12 @@ func (s *Server) handleScroll(reader *lksdk.TextStreamReader, participant string
 		<-time.After(GPIO_DELAY)
 		s.ports.step.SetValue(0)
 	}
+}
+
+func (s *Server) killPowerToMotor() {
+	s.ports.power.SetValue(1)
+}
+
+func (s *Server) restorePowerToMotor() {
+	s.ports.power.SetValue(0)
 }

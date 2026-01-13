@@ -70,6 +70,10 @@ func (s *Server) joinRoom() error {
 
 func (s *Server) participantJoined(user *lksdk.RemoteParticipant) {
 	id := user.Identity()
+	if len(s.state.users) == 0 {
+		s.restorePowerToMotor()
+	}
+
 	s.state.users = append(s.state.users, id)
 	if s.state.current == "" {
 		s.state.current = id
@@ -92,6 +96,9 @@ func (s *Server) participantLeft(user *lksdk.RemoteParticipant) {
 		} else {
 			s.state.current = ""
 		}
+	}
+	if len(s.state.users) == 0 {
+		s.killPowerToMotor()
 	}
 
 	s.broadcastRoomUpdates()

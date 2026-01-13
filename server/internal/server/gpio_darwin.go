@@ -9,7 +9,9 @@ import (
 type ports struct{}
 
 func (s *Server) setupGPIO() (error, *int) { return nil, nil }
-func (s *Server) CleanupGPIO()             {}
+func (s *Server) cleanupGPIO()             {}
+func (s *Server) killPowerToMotor()        {}
+func (s *Server) restorePowerToMotor()     {}
 
 func (s *Server) handleScroll(reader *lksdk.TextStreamReader, participant string) {
 	delta, err := strconv.Atoi(reader.ReadAll())
