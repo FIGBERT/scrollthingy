@@ -37,7 +37,7 @@ func (s *Server) setupGPIO() (error, *int) {
 	return nil, nil
 }
 
-func (s *Server) CleanupGPIO() {
+func (s *Server) cleanupGPIO() {
 	s.ports.direction.Reconfigure(gpio.AsInput)
 	s.ports.direction.Close()
 	s.ports.step.Reconfigure(gpio.AsInput)
