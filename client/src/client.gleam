@@ -12,6 +12,7 @@ import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/event as evt
 import plinth/browser/event.{type Event}
+import plinth/browser/location
 import plinth/browser/window
 import rsvp
 import sketch.{type StyleSheet}
@@ -61,7 +62,7 @@ fn listen_for_scroll() -> Effect(Msg) {
 
 fn get_token() -> Effect(Msg) {
   let server =
-    uri.parse(window.origin())
+    uri.parse(location.origin(window.location(window.self())))
     |> result.try(fn(url) {
       case url.host, url.port {
         Some("localhost"), Some(1234) -> Ok("http://localhost:8080")
@@ -77,12 +78,15 @@ fn get_token() -> Effect(Msg) {
 fn process_token_response(
   resp: Result(response.Response(String), rsvp.Error),
 ) -> Msg {
-  resp
-  |> result.map_error(fn(_) { Nil })
-  |> result.try(fn(resp) { string.split_once(resp.body, on: "\n") })
-  |> result.map(fn(tuple) { ConnectTo(url: tuple.0, token: tuple.1) })
-  |> result.map_error(fn(_) { Err("Unable to connect to the room.") })
-  |> result.unwrap_both
+  case
+    resp
+    |> result.map_error(fn(_) { Nil })
+    |> result.try(fn(resp) { string.split_once(resp.body, on: "\n") })
+    |> result.map(fn(tuple) { ConnectTo(url: tuple.0, token: tuple.1) })
+    |> result.map_error(fn(_) { Err("Unable to connect to the room.") })
+  {
+    Ok(msg) | Error(msg) -> msg
+  }
 }
 
 fn connect_effect(url: String, token: String) -> Effect(Msg) {
